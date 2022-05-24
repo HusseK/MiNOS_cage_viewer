@@ -1,0 +1,7 @@
+streamlit
+google-cloud-storage
+matplotlib
+google
+opencv-python
+seaborn
+pandas
