@@ -3,11 +3,20 @@ import cv2
 from google.oauth2 import service_account
 from google.cloud import storage
 
-credentials = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"]
-)
+#credentials = service_account.Credentials.from_service_account_info(
+#    st.secrets["gcp_service_account"]
+#)
+credentials = service_account.Credentials.from_service_account_file(
+    'minos-350712-2dc2472d64bd.json')
+
 client = storage.Client(credentials=credentials)
 bucket_name = 'cells_and_cages'
+print('#############################')
+print('#############################')
+print('#############################')
+print('#############################')
+print('#############################')
+print('#############################')
 
 def read_file(bucket_name, file_path):
     bucket = client.bucket(bucket_name)
