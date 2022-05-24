@@ -87,6 +87,6 @@ with viewer:
 filename = 'DATASET_CHIP_' + chip_number_choice + '_' + row_number_choice + '_' + col_number_choice + '.tif'
 st.text('Cage displayed: Chip %s \t Row number: %s \t Column number: %s'%(chip_number_choice, row_number_choice, col_number_choice) )
     
-content = read_file(bucket_name=bucket_name, file_path="DATASET_CHIP_71/DATASET_CHIP71_1_7.tif")
-img_content = cv2.imread(content)
-st.image(img_content)
+#content = read_file(bucket_name=bucket_name, file_path="DATASET_CHIP_71/DATASET_CHIP71_1_7.tif")
+#img_content = cv2.imread(content)
+#st.image(img_content)
