@@ -33,7 +33,7 @@ def get_image(bucket, file_path):
 def main():
     
 
-    st.sidebar.image("/Users/Husseine/Documents/GitHub/MiNOS_cage_viewer/logo-minos-pdf.001_transp.png", use_column_width=True)
+    st.sidebar.image("logo-minos-pdf.001_transp.png", use_column_width=True)
     header = st.container()
     viewer= st.container()
 
@@ -49,7 +49,7 @@ def main():
     st.sidebar.markdown('<p>The single-cell solution developed by minos offers the unique ability to directly combine sequencing-based multi-omic analysis and image-based phenotypic analysis at single-cell resolution. This is enabled using a breakthrough microfluidics concept to isolate cells combined with innovative approaches in imaging, molecular biology and also bioinformatics.It will provide highly accurate insights into complex cell populations and their dynamics, opening up unique perspectives in a vast array of fundamental and translational research areas, as well as precision medicine therapeutics and diagnostics.</p>', unsafe_allow_html=True)
     st.sidebar.markdown('<h2>Minos impact</h2>', unsafe_allow_html=True)
     st.sidebar.markdown("<p>Minos solution has the potential to tremendously<strong>&nbsp;</strong><b>impact major healthcare fields,</b>&nbsp;such as:</p><ul><li><b>Cancer disease</b><strong>:</strong> connecting genetic &amp; non-genetic factors, plasticity and cell environment will be essential to understand tumour evolution and drug resistance, to design better and more personalized therapeutic strategies.</li><li><b>Autoimmune disorders:</b> unravelling the complex role of immune cells at the multi-omic and phenotypic levels will result in the development of better treatments.</li><li><b>Infectious disease:&nbsp;</b>correlating host-pathogen interaction to genetic and epigenetic variations will allow elucidating infection and proliferation mechanisms to improve therapy and prevention.</li></ul>", unsafe_allow_html=True)
-
+    
 
     with header:
         st.title("Welcome to the Minos Biosciences cage viewer application!")
