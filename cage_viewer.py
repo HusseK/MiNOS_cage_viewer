@@ -1,4 +1,3 @@
-from turtle import right
 import streamlit as st
 import cv2
 from google.oauth2 import service_account
