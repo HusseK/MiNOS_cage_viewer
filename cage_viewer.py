@@ -99,9 +99,9 @@ def main():
         ('None','58', '66', '67', '69', '70', '71'))
         #st.write('You selected:', chip_number_choice)
         if chip_number_choice!='None':
-            
+            single_cell_indexes =  gcp_csv_to_df(bucket= bucket, file_path="single_cell/CHIP%s_single_cell_indices.xlsx"%chip_number_choice)
             try:
-                single_cell_indexes =  gcp_csv_to_df(bucket= bucket, file_path="single_cell/CHIP%s_single_cell_indices.xlsx"%chip_number_choice)   
+                #single_cell_indexes =  gcp_csv_to_df(bucket= bucket, file_path="single_cell/CHIP%s_single_cell_indices.xlsx"%chip_number_choice)   
                 with metric1:
                     st.metric('Single cell cages count', "%s cages "%str(single_cell_indexes.shape[0]) )
                 with metric2:
