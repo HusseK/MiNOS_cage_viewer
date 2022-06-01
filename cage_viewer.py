@@ -180,7 +180,7 @@ def main():
             try:
                 st.dataframe(single_cell_indexes)
             except:
-                st.write('Single cell indices not available')     
+                st.write('Single cell cages indices not available')     
         #see_whole_chip = st.checkbox('See Chip %s'%chip_number_choice, help='Check this box if you want to see the whole chip', value=False)
         
 main()
