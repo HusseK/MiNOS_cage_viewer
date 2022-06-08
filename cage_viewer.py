@@ -1,4 +1,3 @@
-from matplotlib.image import composite_images
 import streamlit as st
 import cv2
 from google.oauth2 import service_account
@@ -13,8 +12,6 @@ import google
 import time
 import matplotlib.pyplot as plt
 import shutil
-
-from sympy import composite
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=".streamlit/secrets.toml"
 
