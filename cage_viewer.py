@@ -1,3 +1,4 @@
+from matplotlib.image import composite_images
 import streamlit as st
 import cv2
 from google.oauth2 import service_account
@@ -10,6 +11,10 @@ import io
 import numpy as np
 import google
 import time
+import matplotlib.pyplot as plt
+import shutil
+
+from sympy import composite
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=".streamlit/secrets.toml"
 
@@ -20,19 +25,40 @@ credentials = service_account.Credentials.from_service_account_info(
 client = storage.Client(credentials=credentials)
 bucket_name = 'cells_and_cages'
 bucket = client.bucket(bucket_name)
-image_width = 200
+image_width = 350
 max_width = 80
 padding_top = 10
-padding_bottom = 10
+padding_bottom = 1000
 padding_left = 10
 padding_right = 10
 
 @st.cache(hash_funcs={google.cloud.storage.client.Client: np.array})
-def get_image(bucket, file_path,div=65535):
+def get_image(bucket, file_path,ang=0, div=65535):
     blb = bucket.blob(file_path)
     bytes = blb.download_as_bytes()
     image = Image.open(io.BytesIO(bytes))
-    return np.array(image)/div
+    return rotateImage(np.array(image)/div, ang)
+
+from matplotlib.patches import Rectangle
+
+def show_cage_pos_on_chip(img, df, cage_id,chip_number, linewidth=1.5, save=False):
+  fig, ax = plt.subplots()
+  fig.set_figheight(15)
+  fig.set_figwidth(15)
+  ax.imshow(img,cmap='gray')
+  try:
+    xmin = df[df['Cage_ID']==cage_id].iloc[0,1]
+    ymin = df[df['Cage_ID']==cage_id].iloc[0,3]
+  except:
+    raise ValueError("Cage indice out of bounds") 
+  plt.gca().add_patch(Rectangle((ymin,xmin),288,288,linewidth=linewidth,edgecolor='r',facecolor='#3EABBD', alpha=0.2))
+  plt.text(ymin+70, xmin-50, cage_id, color='white', fontsize=7)
+  plt.axis('off')
+  if save:
+    plt.savefig("chip%s_box_around_cage_%s.png"%(chip_number, cage_id), bbox_inches='tight', pad_inches = 0, dpi=fig.dpi)
+  return "chip%s_box_around_cage_%s.png"%(chip_number, cage_id)
+
+
 
 
 #@st.cache(hash_funcs={google.cloud.storage.client.Client: pd.DataFrame})
@@ -44,6 +70,19 @@ def gcp_csv_to_df(bucket, file_path):
     #print(f'Pulled down file from bucket {bucket_name}, file name: {file_path}')
     return df
 
+def rotateImage(image, angle):
+  if len(image.shape)==2:
+    row,col = image.shape
+  elif len(image.shape)==3:
+    row,col,chan = image.shape
+  else:
+    print('Invalid image shape')
+  
+  center=tuple(np.array([row,col])/2)
+  rot_mat = cv2.getRotationMatrix2D(center,angle,1.0)
+  new_image = cv2.warpAffine(image, rot_mat, (col,row))
+  return new_image
+
 
 
 
@@ -52,7 +91,7 @@ def main():
     viewer= st.container()
   
     row_number, col_number = st.columns((1,1))
-    r, viewer_image, rr = st.columns(3)
+    viewer_image, composite_image = st.columns((1,1))
     metric1,metric2,metric3 = st.columns((1,1,1))
 
 
@@ -71,7 +110,14 @@ def main():
             }                
             </style>
             """
+    modify_container_padding ="""
+        <style>
+            .appview-container .main .block-container{{
+            padding-bottom: {padding_bottom}px;}}
+        </style>
+        """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+    #st.markdown(modify_container_padding, unsafe_allow_html=True)
 
     st.sidebar.video('https://www.youtube.com/watch?v=KqDEuwkvSus')
     st.sidebar.image("images/logo-minos-pdf.001_transp.png", use_column_width=True)
@@ -93,21 +139,31 @@ def main():
 
     with viewer:
         st.header("Cage viewer")
+        angles = st.secrets.angles
         
         chip_number_choice= st.selectbox(
         'Select the chip you want to display',
         ('None','58', '66', '67', '69', '70', '71'))
         #st.write('You selected:', chip_number_choice)
         if chip_number_choice!='None':
-           
+            #try:
+            raw_chip_image = get_image(bucket= bucket, file_path='RAW_CHIPS/CHIP%s.ome.jpg'%chip_number_choice, div=255, ang=float(angles[chip_number_choice]))
+            #except:
+            #    print("Problème de chargement de l'image")
+
             try:
-                single_cell_indexes =  gcp_csv_to_df(bucket= bucket, file_path="single_cell/CHIP%s_single_cell_indices.xlsx"%chip_number_choice)   
+                df_cages_position = gcp_csv_to_df(bucket=bucket, file_path="cage_positions/df_CHIP_%s_cages_position.xlsx"%(chip_number_choice))
+            except:
+                print('Echec chargement cages positions')
+
+            try:
+                single_cell_indexes =  gcp_csv_to_df(bucket= bucket, file_path="single_cell/Single_cell_chip_%s.xlsx"%chip_number_choice)   
                 with metric1:
                     st.metric('Single cell cages count', "%s cages "%str(single_cell_indexes.shape[0]) )
                 with metric2:
-                    st.metric('Mouse single cell cages count',"%s cages"%str(single_cell_indexes[single_cell_indexes['Human single cell']==0].shape[0]))
+                    st.metric('Mouse single cell cages count',"%s cages"%str(single_cell_indexes[single_cell_indexes['Single_cell_green']==1].shape[0] + single_cell_indexes[single_cell_indexes['Single_cell_green_only_flex']==1].shape[0]))
                 with metric3:
-                    st.metric('Mouse single cell cages count',"%s cages"%str(single_cell_indexes[single_cell_indexes['Mouse Single cell']==0].shape[0]))
+                    st.metric('Human single cell cages count',"%s cages"%str(single_cell_indexes[single_cell_indexes['Single_cell_blue']==1].shape[0]+ single_cell_indexes[single_cell_indexes['Single_cell_blue_only_flex']==1].shape[0]))
                 
             except:
                 st.write(' ')
@@ -136,43 +192,40 @@ def main():
                         'Select the row number of the cage you want to display',
                         tuple(str(i) for i in range(24)))
 
-
-        
-            
-
             filename= "DATASET_CHIP_" +chip_number_choice+ "/DATASET_CHIP" + chip_number_choice + "_" + row_number_choice + "_" + col_number_choice + ".tif"
             
-            with r:
-                
-                try:
-                    im_composite= get_image(bucket=bucket, file_path="DATASET_CHIP_" +chip_number_choice+ "/DATASET_CHIP" + chip_number_choice + "composite_" + row_number_choice + "_" + col_number_choice + ".tif", div=255)
-                    st.image(im_composite, caption="Composite row %s column %s"%(row_number_choice,col_number_choice), width=image_width)
-                except:
-                    st.write(' ')
             with viewer_image:
                 try:
                     im_bf = get_image(bucket=bucket,file_path=filename)
                     st.image(im_bf,caption="Chip %s row %s column %s"%(chip_number_choice,row_number_choice,col_number_choice), width=image_width)
                 except:
                     st.write(' ')
-            with rr:
+
+            with composite_image:
+                
                 try:
-                    im_pred = get_image(bucket=bucket, file_path="DATASET_CHIP_" + chip_number_choice + "/PRED_DATASET_CHIP" +chip_number_choice + '_' + row_number_choice + "_" + col_number_choice + ".tif", div=255 )
-                    st.image(im_pred, caption="Prediction row %s column %s"%(row_number_choice,col_number_choice), width=image_width)
+                    im_composite= get_image(bucket=bucket, file_path="DATASET_CHIP_" +chip_number_choice+ "/DATASET_CHIP" + chip_number_choice + "composite_" + row_number_choice + "_" + col_number_choice + ".tif", div=255)
+                    st.image(im_composite, caption="Composite row %s column %s"%(row_number_choice,col_number_choice), width=image_width)
                 except:
                     st.write(' ')
+            #with rr:
+            #    try:
+            #        im_pred = get_image(bucket=bucket, file_path="DATASET_CHIP_" + chip_number_choice + "/PRED_DATASET_CHIP" +chip_number_choice + '_' + row_number_choice + "_" + col_number_choice + ".tif", div=255 )
+            #        st.image(im_pred, caption="Prediction row %s column %s"%(row_number_choice,col_number_choice), width=image_width)
+            #    except:
+            #        st.write(' ')
         #st.markdown('Cage displayed: Chip %s\nRow number: %s\nColumn number: %s'%(chip_number_choice, row_number_choice, col_number_choice) )
     if chip_number_choice!='None':
         options = st.multiselect(
         'Additional content',
-        ['Whole chip %s'%(chip_number_choice), 'Single cell indexes']#,     ['Whole chip %s'%(chip_number_choice)]
+        ['Whole chip %s'%(chip_number_choice), 'Single cell indexes', 'Locate cage %s_%s on chip %s'%(row_number_choice,col_number_choice,chip_number_choice)]#,     ['Whole chip %s'%(chip_number_choice)]
         )
         #st.write(options)
 
         #see_whole_chip = st.checkbox('See Chip %s'%chip_number_choice, help='Check this box if you want to see the whole chip', value=False)
         if 'Whole chip %s'%(chip_number_choice) in options:    
             try:
-                raw_chip_image = get_image(bucket= bucket, file_path='RAW_CHIPS/CHIP%s.ome.jpg'%chip_number_choice, div=255)
+                #
                 st.image(raw_chip_image, use_column_width=True)
             except:
                 st.write(' ')
@@ -180,7 +233,15 @@ def main():
             try:
                 st.dataframe(single_cell_indexes)
             except:
-                st.write('Single cell cages indices not available')     
+                st.write('Single cell cages indices not available')
+        if 'Locate cage %s_%s on chip %s'%(row_number_choice,col_number_choice,chip_number_choice) in options:
+            rr = show_cage_pos_on_chip(raw_chip_image , df_cages_position, "%s_%s"%(row_number_choice,col_number_choice),int(chip_number_choice),save=True)
+            cage_localisation_image = cv2.imread(rr)
+            cage_localisation_image = cv2.cvtColor(cage_localisation_image, cv2.COLOR_BGR2RGB)
+            st.image(cage_localisation_image, use_column_width=True)
+            os.remove(rr)
+
+
         #see_whole_chip = st.checkbox('See Chip %s'%chip_number_choice, help='Check this box if you want to see the whole chip', value=False)
         
 main()
