@@ -143,13 +143,13 @@ def main():
         
         chip_number_choice= st.selectbox(
         'Select the chip you want to display',
-        ('None','58', '66', '67', '69', '70', '71','72', '74'))
+        ('None','58', '66', '67', '69', '70', '71','72', '74', '75'))
         #st.write('You selected:', chip_number_choice)
         if chip_number_choice!='None':
             try:
                 raw_chip_image = get_image(bucket= bucket, file_path='RAW_CHIPS/CHIP%s.ome.jpg'%chip_number_choice, div=255, ang=float(angles[chip_number_choice]))
             except:
-                print("Problème de chargement de l'image")
+                print("Problème de chargement de l'image \n Verifier les angles")
 
             try:
                 df_cages_position = gcp_csv_to_df(bucket=bucket, file_path="cage_positions/df_CHIP_%s_cages_position.xlsx"%(chip_number_choice))
@@ -203,7 +203,7 @@ def main():
 
             with composite_image:
                 try:
-                    if chip_number_choice in ['72', '74']:
+                    if chip_number_choice in ['72', '74','75']:
                         im_composite = get_image(bucket=bucket, file_path="DATASET_CHIP_" + chip_number_choice + "/COMPOSITE_DATASET_CHIP" + chip_number_choice + '_' + row_number_choice + "_" + col_number_choice + ".tif", div=255 )
                     else:
                         im_composite = get_image(bucket=bucket, file_path="DATASET_CHIP_" +chip_number_choice+ "/DATASET_CHIP" + chip_number_choice + "composite_" + row_number_choice + "_" + col_number_choice + ".tif", div=255)
