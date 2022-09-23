@@ -143,7 +143,7 @@ def main():
         
         chip_number_choice= st.selectbox(
         'Select the chip you want to display',
-        ('None','58', '66', '67', '69', '70', '71','72', '74', '75'))
+        ('None','58', '66', '67', '69', '70', '71','72', '74', '75', '86', '87'))
         #st.write('You selected:', chip_number_choice)
         if chip_number_choice!='None':
             try:
@@ -151,10 +151,11 @@ def main():
             except:
                 print("Problème de chargement de l'image \n Verifier les angles")
 
-            try:
-                df_cages_position = gcp_csv_to_df(bucket=bucket, file_path="cage_positions/df_CHIP_%s_cages_position.xlsx"%(chip_number_choice))
-            except:
-                print('Echec chargement cages positions')
+            #try:
+            df_cages_position = gcp_csv_to_df(bucket=bucket, file_path="cage_positions/df_CHIP_%s_cages_position.xlsx"%(chip_number_choice))
+            #except:
+                #print('Echec chargement cages positions')
+
 
             try:
                 single_cell_indexes =  gcp_csv_to_df(bucket= bucket, file_path="single_cell/Single_cell_chip_%s.xlsx"%chip_number_choice)   
@@ -173,7 +174,10 @@ def main():
                     col_number_choice = st.selectbox(
                     'Select the column number of the cage you want to display',
                     tuple(str(i) for i in range(15)))
-
+                elif chip_number_choice in ['86', '87']:
+                    col_number_choice = st.selectbox(
+                    'Select the column number of the cage you want to display',
+                    tuple(str(i) for i in range(41)))
                 else:
                     col_number_choice = st.selectbox(
                     'Select the column number of the cage you want to display',
@@ -205,6 +209,8 @@ def main():
                 try:
                     if chip_number_choice in ['72', '74','75']:
                         im_composite = get_image(bucket=bucket, file_path="DATASET_CHIP_" + chip_number_choice + "/COMPOSITE_DATASET_CHIP" + chip_number_choice + '_' + row_number_choice + "_" + col_number_choice + ".tif", div=255 )
+                    elif chip_number_choice in ['87']:
+                        im_composite = get_image(bucket=bucket, file_path="DATASET_CHIP_" +chip_number_choice+ "/DATASET_CHIP" + chip_number_choice + "_composite_" + row_number_choice + "_" + col_number_choice + ".tif", div=255)
                     else:
                         im_composite = get_image(bucket=bucket, file_path="DATASET_CHIP_" +chip_number_choice+ "/DATASET_CHIP" + chip_number_choice + "composite_" + row_number_choice + "_" + col_number_choice + ".tif", div=255)
                     st.image(im_composite, caption="Composite row %s column %s"%(row_number_choice,col_number_choice), width=image_width)
